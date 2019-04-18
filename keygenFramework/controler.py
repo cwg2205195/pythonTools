@@ -19,4 +19,11 @@ class Dictator():
     #从后端取数据回显
     def feedbackData(self):
         #转为字符串返回
-        return str(self.dataProcessor.data,encoding='utf-8',errors='ignore')
+        text = self.dataProcessor.data
+        print(type(text))
+        if type(text) == str:
+            return text
+        else:
+            text= bytes(text,encoding='utf-8',errors='ignore')
+            return str(text,encoding='utf-8',errors='ignore')
+        
