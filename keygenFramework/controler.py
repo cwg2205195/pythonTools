@@ -8,15 +8,14 @@ from DataHandling import DataProcessor
 #数据从GUI 传递到 模型层，然后从模型层返回给 GUI显示
 class Dictator():
     def __init__(self,data):
-        self.data= data
-        self.processData()
+        self.processData(data)
 
     #把前端数据传递给后端处理
-    def processData(self):
-        self.dataProcessor= DataProcessor(self.data)
+    def processData(self,data):
+        self.dataProcessor= DataProcessor(data)
         
     
     #从后端取数据回显
     def feedbackData(self):
         #转为字符串返回
-        return str(self.dataProcessor.data,encoding='utf-8',errors='ignore')
+        return self.dataProcessor.data
