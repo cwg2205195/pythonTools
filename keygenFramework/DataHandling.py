@@ -4,6 +4,7 @@
 import base64
 import hashlib
 import hmac
+import rsa
 
 #数据数据类
 class DataProcessor():
@@ -67,6 +68,8 @@ class DataProcessor():
 
     #简化的python byte ，用 utf-8 编码的转换
     def getBytes(self,source):
+        if type(source) == bytes:
+            return source
         return bytes(source,encoding='utf-8',errors='ignore')
 
     #简化的python string， utf-8 编码
@@ -78,22 +81,65 @@ class DataProcessor():
     hashAlgs={0:'sha1',1:'sha224',2:'sha256',3:'sha384',4:'sha512',5:'blake2b',6:'md5',
     7:'sha3_384',8:'sha3_512',9:'shake_128',10:'shake_256',11:'sha3_224',12:'sha3_256',
     13:'sha3_384',14:'sha3_512',15:'shake_128',16:'blake2s'}
+    
+    hashFuns={0:hashlib.sha1,1:hashlib.sha224,2:hashlib.sha256,3:hashlib.sha384,4:hashlib.sha512,
+    5:hashlib.blake2b,6:hashlib.md5,7:hashlib.sha3_224,8:hashlib.sha3_256,
+    9:hashlib.sha3_384,10:hashlib.sha3_512,11:hashlib.shake_128,12:hashlib.shake_256,
+    13:hashlib.blake2s}
 
-    #HMAC 计算函数
+    #HMAC 计算函数，alg是hash函数，来自 hashFuns 
     def getHMAC(self,msg,key,alg):
         return hmac.new(self.getBytes(key),self.getBytes(msg),alg).hexdigest()
     
-    #Hash 计算函数
+    #Hash 计算函数,alg 是字符串，来自 hashAlgs
     def getHash(self,msg,alg):
-        pass 
+        hashFun = hashlib.new(alg)
+        msg= self.getBytes(msg)
+        hashFun.update(msg)
+        return hashFun.hexdigest()
     
+    #获取RSA密钥对,参数是 密钥长度，返回 公钥、私钥对
+    def getRsaKeyPair(self,keyLen):
+        return rsa.newkeys(keyLen)
+    
+    #RSA 加密，参数是消息、公钥，如果是签名则用私钥
+    def rsaEncrypt(self,msg,priKey):
+        msg= self.getBytes(msg)
+        return rsa.encrypt(msg,priKey)
+    
+    #RSA 解密，参数是密文、私钥，如果是验证签名则是公钥
+    def rsaDecrypt(self,msg,pubKey):
+        msg= self.getBytes(msg)
+        return rsa.decrypt(msg,pubKey)
+    
+    #RSA 签名，参数是 明文、私钥、哈希算法，返回 RSA签名
+    def rsaSign(self,msg,priKey,alg):
+        msg = self.getBytes(msg)
+        return rsa.sign(msg,priKey,alg)
+    
+    #RSA 验证签名，参数是明文、签名、公钥,签名正确返回 True
+    def rsaVerify(self,msg,sig,pubKey):
+        try:
+            rsa.verify(msg,sig,pubKey)
+            return True
+        except rsa.VerificationError as ve:
+            print("RSA signature not  match !")
+            return False
+
 
     #implement your own keygen function
     #每个 Keygen 实现不同的处理函数，处理 data 即可 。
     def workInterface(self):
         #简单的计算 base64 
         #self.data=self.encBase64(bytes(self.data,encoding='utf-8',errors='ignore'))
-        self.data= self.getString(self.getHMAC(self.data,'123456',self.hashAlgs[0]))
+        #self.data= self.getString(self.getHMAC(self.data,'123456',self.hashFuns[0]))
+        #self.data= self.getString(self.getHash(self.data,self.hashAlgs[0]))
+        pk,rk= self.getRsaKeyPair(512)
+        msg="I love you "
+        enc = self.rsaEncrypt(msg,pk)
+        print(enc)
+        print(self.rsaDecrypt(enc,rk).decode('utf-8'))
+        #self.data=self.getString()
         '''dat=self.hexstrToString(self.data)
         print(dat)
         self.data="".join(dat)'''
